@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cory Team Ticket Counter</title>
+  <style>
+    :root{
+      --navy:#0f2d46; --pink:#d86acb; --blue:#0f88a8; --green:#2c6b1f;
+      --text:#1f2937; --white:#fff; --border:#d8dee5; --disabled:#a7b0bd;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Segoe UI",Arial,sans-serif; color:var(--text);
+      background:linear-gradient(135deg,#fdeff8 0%,#f7f9fc 45%,#e9f4fb 100%);
+      min-height:100vh; padding:24px;
+    }
+    .app{max-width:920px;margin:auto;background:rgba(255,255,255,.95);border-radius:24px;
+      box-shadow:0 16px 40px rgba(15,45,70,.18);overflow:hidden}
+    .hero{background:linear-gradient(90deg,#0f2d46,#17496e);color:#fff;padding:26px;text-align:center}
+    .hero h1{margin:0;font-size:42px}.hero p{margin:8px 0 0;opacity:.88;font-size:14px;text-transform:uppercase}
+    .content{padding:26px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr!important}}
+    .card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px}
+    .card h2{margin:0 0 14px;color:var(--navy)}
+    .form-row{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin-bottom:10px}
+    label{font-weight:700;color:var(--navy);font-size:14px}
+    select,input,textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:15px}
+    input[readonly]{background:#f8fafc} textarea{min-height:72px;resize:vertical}
+    .counter-box{background:#050505;color:#fff;border-radius:16px;height:165px;display:flex;
+      align-items:center;justify-content:center;font-size:76px;font-weight:800;margin:10px 0 18px}
+    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    button{border:0;border-radius:14px;padding:16px;color:#fff;font-weight:800;cursor:pointer;font-size:15px}
+    button:disabled{background:var(--disabled)!important;color:#eef2f7!important;cursor:not-allowed;opacity:.72}
+    .btn-plus{background:var(--pink)}.btn-minus{background:var(--blue)}
+    .btn-save{background:#08296d;grid-column:1/-1}.btn-reset{background:var(--green);grid-column:1/-1}
+    .status,.lock-panel{margin-top:16px;padding:14px;border-radius:12px;background:#f4f6f8;text-align:center;font-size:14px}
+    .lock-panel.ready{background:#e9fbe8;color:#14532d}.lock-panel.locked{background:#fff2f8;color:#831843}
+    .lock-panel.waiting{background:#fff7ed;color:#7c2d12}
+    .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .pill{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;text-align:center}
+    .pill b{display:block;color:var(--navy);font-size:19px}.pill span{font-size:12px;color:#64748b;text-transform:uppercase}
+    .history-wrap{margin-top:10px;border:1px solid #e2e8f0;border-radius:14px;overflow:auto;max-height:330px}
+    .history-table{width:100%;border-collapse:collapse;font-size:13px}
+    .history-table th{background:#0f2d46;color:#fff;text-align:left;padding:10px}
+    .history-table td{padding:10px;border-bottom:1px solid #e5e7eb}
+    .history-table tbody tr:last-child td{border-bottom:1px solid #e5e7eb}
+    .history-table tfoot td{background:#f8fafc;color:#0f2d46;padding:11px}
+    .history-empty{margin-top:10px;padding:14px;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;text-align:center;font-size:13px}
+    .aht-panel{margin-top:20px;padding:16px;border:1px solid #dbe4ef;border-radius:16px;background:#f8fbff}
+    .aht-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .aht-title h2{margin:0!important}
+    .aht-target{font-size:12px;color:#64748b;background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:6px 9px;white-space:nowrap}
+    .aht-main{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin-bottom:10px}
+    .aht-feature{border-radius:14px;padding:15px;background:#0f2d46;color:#fff;text-align:center}
+    .aht-feature .value{display:block;font-size:34px;font-weight:800;letter-spacing:1px;line-height:1.1}
+    .aht-feature .label{display:block;font-size:11px;opacity:.82;text-transform:uppercase;letter-spacing:.45px;margin-top:5px}
+    .aht-feature.good{background:#276221}.aht-feature.high{background:#9f2f3d}.aht-feature.neutral{background:#0f2d46}
+    .aht-side{display:grid;gap:10px}
+    .aht-stat{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center}
+    .aht-stat b{display:block;color:#0f2d46;font-size:18px}.aht-stat span{display:block;color:#64748b;font-size:10px;text-transform:uppercase;margin-top:3px}
+    .aht-message{font-size:13px;line-height:1.45;text-align:center;padding:10px;border-radius:11px;background:#fff;color:#475569;border:1px solid #e2e8f0}
+    .aht-message.good{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.aht-message.high{background:#fff1f2;color:#9f1239;border-color:#fecdd3}
+    .aht-note{margin-top:9px;color:#64748b;font-size:11px;line-height:1.4;text-align:center}
+    @media(max-width:520px){.aht-main{grid-template-columns:1fr}.mini{grid-template-columns:1fr 1fr}.mini .pill:last-child{grid-column:1/-1}}
+    .footer{text-align:center;color:#64748b;font-size:12px;margin-top:18px}
+  </style>
+</head>
+<body>
+<main class="app">
+  <section class="hero"><h1>Ticket Counter</h1><p>Cory Team · Hourly Ticket Counter</p></section>
+  <section class="content">
+    <div class="grid">
+      <div class="card">
+        <h2>Counter</h2>
+        <div class="form-row"><label for="helper">Helper</label><select id="helper"></select></div>
+        <div class="form-row"><label for="alias">Alias</label><input id="alias" readonly /></div>
+        <div class="form-row"><label for="lead">Lead</label><input id="lead" readonly /></div>
+        <div class="form-row"><label for="date">Date</label><input id="date" type="date" /></div>
+        <div class="form-row"><label for="period">Active period</label><select id="period"></select></div>
+        <div class="form-row"><label for="notes">Notes</label><textarea id="notes" placeholder="Optional notes"></textarea></div>
+        <div id="lockPanel" class="lock-panel waiting">Checking selected period...</div>
+        <div class="counter-box" id="counter">0</div>
+        <div class="buttons">
+          <button class="btn-plus" id="plus">Run +1</button>
+          <button class="btn-minus" id="minus">Run -1</button>
+          <button class="btn-save" id="save">Run Log Time / Save</button>
+          <button class="btn-reset" id="reset">Run Restart Counting</button>
+        </div>
+        <div class="status" id="status">Ready. Select your name and start counting.</div>
+      </div>
+
+      <div class="card">
+        <h2>Today Summary</h2>
+        <div class="mini">
+          <div class="pill"><b id="todayTotal">0</b><span>Daily total</span></div>
+          <div class="pill"><b id="periodTotal">0</b><span>Current period</span></div>
+          <div class="pill"><b id="logStatus">Open</b><span>Log status</span></div>
+        </div>
+
+        <div class="lock-panel waiting">
+          Count tickets during the selected hour. <b>Run Log Time / Save</b> unlocks only after the period ends
+          and can be used once for that helper/date/period.
+        </div>
+
+        <div class="aht-panel">
+          <div class="aht-title">
+            <h2>Approx. AHT Pace</h2>
+            <span class="aht-target">Goal: 05:24</span>
+          </div>
+          <div class="aht-main">
+            <div class="aht-feature neutral" id="ahtFeature">
+              <span class="value" id="currentAht">--:--</span>
+              <span class="label">Current period approx. AHT</span>
+            </div>
+            <div class="aht-side">
+              <div class="aht-stat"><b id="dailyAht">--:--</b><span>Daily avg. approx. AHT</span></div>
+              <div class="aht-stat"><b id="activeTime">00:00:00</b><span>Approx. active time</span></div>
+            </div>
+          </div>
+          <div class="aht-message" id="ahtMessage">Add your first interaction to start the AHT pace estimate.</div>
+          <div class="aht-note">This is a pacing estimate based on elapsed time and completed interactions. Official AHT is calculated in Zendesk and may differ.</div>
+        </div>
+
+        <h2 style="margin-top:22px;">Hourly History</h2>
+        <div id="emptyHistory" class="history-empty">No completed periods logged for this date yet.</div>
+        <div class="history-wrap" id="historyWrap" style="display:none;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Tickets</th>
+                <th>Approx. AHT</th>
+                <th>Logged at</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+            <tfoot>
+              <tr>
+                <td><strong>Daily Total</strong></td>
+                <td id="historyDailyTotal"><strong>0</strong></td>
+                <td id="historyDailyAht"><strong>--:--</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="footer">Helper view · Hourly ticket counter</div>
+  </section>
+</main>
+
+<script>
+const ROSTER = [
+  {name:"Benji Baez", alias:"v-bbaezjones", lead:"Cory"},
+  {name:"Daniel Restrepo", alias:"v-drestrepo", lead:"Cory"},
+  {name:"Giovanni Arteaga", alias:"v-giovanniar", lead:"Cory"},
+  {name:"Hector Cisneros", alias:"", lead:"Cory"},
+  {name:"Judith Cristina Casillas San Juan", alias:"v-judithc", lead:"Cory"},
+  {name:"Mariana Moreno", alias:"", lead:"Cory"},
+  {name:"Pablo Javier Zuñiga Quiñones", alias:"v-pablozu", lead:"Cory"},
+  {name:"Rafael Lizarraga Arias", alias:"v-rafaelli", lead:"Cory"},
+  {name:"Ricardo Rivera del Río", alias:"v-ricardor", lead:"Cory"},
+  {name:"Rodrigo Bravo Morales", alias:"v-rodrigobr", lead:"Cory"},
+  {name:"Sergio Tiznado Santo", alias:"", lead:"Cory"},
+  {name:"Tony Gutay", alias:"v-tonygutay", lead:"Cory"}
+];
+
+const $ = id => document.getElementById(id);
+const state = {
+  count:0,
+  records:JSON.parse(localStorage.getItem("ticketCounter.records") || "[]"),
+  canLog:false,
+  isLocked:false
+};
+
+const AHT_GOAL_SECONDS = 5 * 60 + 24; // 5.4 minutes = 05:24
+
+function formatDuration(totalSeconds, includeHours=false){
+  const safe=Math.max(0,Math.round(Number(totalSeconds)||0));
+  const h=Math.floor(safe/3600), m=Math.floor((safe%3600)/60), s=safe%60;
+  if(includeHours || h>0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+function selectedPeriodBounds(){
+  const dv=$("date").value, p=$("period").value;
+  if(!dv||!p) return null;
+  const h=Number(p.split(":")[0]), [y,m,d]=dv.split("-").map(Number);
+  const start=new Date(y,m-1,d,h,0,0,0);
+  const end=new Date(y,m-1,d,h+1,0,0,0);
+  return {start,end};
+}
+function selectedPeriodElapsedSeconds(){
+  const bounds=selectedPeriodBounds();
+  if(!bounds) return 0;
+  const now=new Date();
+  if(now<=bounds.start) return 0;
+  if(now>=bounds.end) return 3600;
+  return Math.max(0,Math.min(3600,Math.floor((now-bounds.start)/1000)));
+}
+function recordElapsedSeconds(record){
+  const count=Number(record.count||0);
+  if(count<=0) return 0;
+  const saved=Number(record.elapsedSeconds);
+  return Number.isFinite(saved) && saved>0 ? Math.min(3600,saved) : 3600;
+}
+function recordApproxAhtSeconds(record){
+  const count=Number(record.count||0);
+  if(count<=0) return null;
+  const stored=Number(record.approxAhtSeconds);
+  if(Number.isFinite(stored) && stored>=0) return stored;
+  return recordElapsedSeconds(record)/count;
+}
+
+function pad(n){return String(n).padStart(2,"0")}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function nowIsoLocal(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
+function periods(){return Array.from({length:24},(_,h)=>`${pad(h)}:00 - ${pad(h)}:59`)}
+function currentPeriodLabel(){const h=new Date().getHours();return `${pad(h)}:00 - ${pad(h)}:59`}
+function selectedRoster(){return ROSTER.find(r=>r.name===$("helper").value) || ROSTER[0]}
+function keyIdentity(){const r=selectedRoster();return r.alias || r.name.replace(/\s+/g,"_")}
+function countKey(){return `ticketCounter.count.${keyIdentity()}.${$("date").value}.${$("period").value}`}
+function logKey(){return `${keyIdentity()}|${$("date").value}|${$("period").value.split(" - ")[0]}`}
+function lockKey(){return `ticketCounter.logged.${logKey()}`}
+function loggedRecord(){const x=localStorage.getItem(lockKey());try{return x?JSON.parse(x):null}catch{return null}}
+function saveCount(){localStorage.setItem(countKey(),String(state.count))}
+function loadCount(){state.count=Number(localStorage.getItem(countKey())||"0");render();updateGate()}
+function setStatus(msg){$("status").textContent=msg}
+function recordsForSelectedDay(){
+  const helper=$("helper").value, d=$("date").value;
+  return state.records
+    .filter(r=>r.helper===helper && r.date===d && r.action==="Save")
+    .sort((a,b)=>String(a.period||"").localeCompare(String(b.period||"")));
+}
+function totalToday(){
+  return recordsForSelectedDay().reduce((s,r)=>s+Number(r.count||0),0)
+}
+function liveDailyTickets(){
+  return totalToday() + (loggedRecord() ? 0 : Number(state.count||0));
+}
+function dailyAhtStats(){
+  const records=recordsForSelectedDay();
+  let tickets=0, seconds=0;
+  records.forEach(r=>{
+    const c=Number(r.count||0);
+    if(c>0){ tickets+=c; seconds+=recordElapsedSeconds(r); }
+  });
+  if(!loggedRecord() && state.count>0){
+    tickets+=Number(state.count);
+    seconds+=selectedPeriodElapsedSeconds();
+  }
+  return {tickets, seconds, aht:tickets>0 ? seconds/tickets : null};
+}
+function displayLoggedAt(timestamp){
+  if(!timestamp) return "";
+  const time = String(timestamp).split(" ")[1] || "";
+  return time ? time.slice(0,5) : timestamp;
+}
+function renderHistory(){
+  const records = recordsForSelectedDay();
+  const body = $("historyBody");
+  const wrap = $("historyWrap");
+  const empty = $("emptyHistory");
+  if(!body || !wrap || !empty) return;
+
+  if(records.length===0){
+    body.innerHTML="";
+    wrap.style.display="none";
+    empty.style.display="block";
+    $("historyDailyTotal").innerHTML="<strong>0</strong>";
+    $("historyDailyAht").innerHTML="<strong>--:--</strong>";
+    return;
+  }
+
+  body.innerHTML = records.map(r=>{
+    const aht=recordApproxAhtSeconds(r);
+    return `
+    <tr>
+      <td>${r.period}</td>
+      <td><strong>${Number(r.count||0)}</strong></td>
+      <td><strong>${aht===null ? "--:--" : formatDuration(aht)}</strong></td>
+      <td>${displayLoggedAt(r.timestamp)}</td>
+    </tr>`;
+  }).join("");
+
+  const loggedTickets=records.reduce((s,r)=>s+Number(r.count||0),0);
+  const loggedSeconds=records.reduce((s,r)=>s+recordElapsedSeconds(r),0);
+  const loggedAht=loggedTickets>0 ? loggedSeconds/loggedTickets : null;
+  $("historyDailyTotal").innerHTML=`<strong>${loggedTickets}</strong>`;
+  $("historyDailyAht").innerHTML=`<strong>${loggedAht===null ? "--:--" : formatDuration(loggedAht)}</strong>`;
+  empty.style.display="none";
+  wrap.style.display="block";
+}
+function renderAht(){
+  const elapsed=selectedPeriodElapsedSeconds();
+  const current=state.count>0 ? elapsed/state.count : null;
+  const daily=dailyAhtStats();
+  const feature=$("ahtFeature"), message=$("ahtMessage");
+  $("currentAht").textContent=current===null ? "--:--" : formatDuration(current);
+  $("dailyAht").textContent=daily.aht===null ? "--:--" : formatDuration(daily.aht);
+  $("activeTime").textContent=formatDuration(daily.seconds,true);
+
+  feature.className="aht-feature neutral";
+  message.className="aht-message";
+  if(current===null){
+    message.textContent="Add your first interaction to start the AHT pace estimate.";
+  } else if(current<=AHT_GOAL_SECONDS){
+    feature.className="aht-feature good";
+    message.className="aht-message good";
+    message.textContent=`Current pace is within the 05:24 AHT goal (${formatDuration(current)} approx.).`;
+  } else {
+    feature.className="aht-feature high";
+    message.className="aht-message high";
+    message.textContent=`Current pace is above the 05:24 AHT goal (${formatDuration(current)} approx.). Keep the next interactions focused and efficient.`;
+  }
+}
+function periodUnlockDate(){
+  const bounds=selectedPeriodBounds();
+  return bounds ? bounds.end : null
+}
+function formatTime(d){return `${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function render(){
+  $("counter").textContent=state.count;
+  $("periodTotal").textContent=state.count;
+  $("todayTotal").textContent=liveDailyTickets();
+  renderHistory();
+  renderAht()
+}
+function updateGate(){
+  const logged=loggedRecord(), unlock=periodUnlockDate(), now=new Date();
+  state.isLocked=!!logged;
+  if(logged){
+    state.canLog=false;
+    ["save","plus","minus","reset"].forEach(id=>$(id).disabled=true);
+    $("save").textContent="Run Log Time already used";
+    $("logStatus").textContent="Locked";
+    $("lockPanel").className="lock-panel locked";
+    $("lockPanel").innerHTML=`This period was already logged. Saved count: <b>${logged.count}</b>.`;
+    return
+  }
+  $("plus").disabled=false;$("minus").disabled=false;$("reset").disabled=false;
+  if(unlock && now>=unlock){
+    state.canLog=true;$("save").disabled=false;$("save").textContent="Run Log Time / Save";
+    $("logStatus").textContent="Ready";$("lockPanel").className="lock-panel ready";
+    $("lockPanel").innerHTML=`Period completed. <b>Run Log Time / Save</b> is now available.`
+  } else {
+    state.canLog=false;$("save").disabled=true;
+    $("save").textContent=unlock?`Unlocks at ${formatTime(unlock)}`:"Run Log Time / Save";
+    $("logStatus").textContent="Waiting";$("lockPanel").className="lock-panel waiting";
+    $("lockPanel").textContent="Run Log Time will unlock automatically when the selected period ends."
+  }
+}
+function refreshHelper(){
+  const r=selectedRoster();
+  $("alias").value=r.alias || "Pending";
+  $("lead").value=r.lead;
+  localStorage.setItem("ticketCounter.lastHelper",r.name);
+  loadCount()
+}
+function storeRecord(payload){
+  state.records.push(payload);
+  localStorage.setItem("ticketCounter.records",JSON.stringify(state.records));
+  localStorage.setItem(lockKey(),JSON.stringify(payload))
+}
+function init(){
+  ROSTER.forEach(r=>{const o=document.createElement("option");o.value=r.name;o.textContent=r.name;$("helper").appendChild(o)});
+  periods().forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;$("period").appendChild(o)});
+  $("date").value=todayStr();$("period").value=currentPeriodLabel();
+  const last=localStorage.getItem("ticketCounter.lastHelper");if(last&&ROSTER.some(r=>r.name===last))$("helper").value=last;
+  refreshHelper();
+
+  $("helper").addEventListener("change",refreshHelper);
+  $("date").addEventListener("change",loadCount);
+  $("period").addEventListener("change",loadCount);
+  $("plus").onclick=()=>{if(state.isLocked)return;state.count++;saveCount();render()};
+  $("minus").onclick=()=>{if(state.isLocked)return;state.count=Math.max(0,state.count-1);saveCount();render()};
+  $("reset").onclick=()=>{if(state.isLocked)return;if(confirm("Restart this period count to 0?")){state.count=0;saveCount();render()}};
+  $("save").onclick=()=>{
+    updateGate();if(!state.canLog)return;
+    const r=selectedRoster();
+    const payload={
+      logKey:logKey(), timestamp:nowIsoLocal(), helper:r.name, alias:r.alias||"",
+      lead:r.lead, date:$("date").value, period:$("period").value,
+      count:state.count, elapsedSeconds:selectedPeriodElapsedSeconds(),
+      approxAhtSeconds:state.count>0 ? selectedPeriodElapsedSeconds()/state.count : null,
+      action:"Save", notes:$("notes").value||""
+    };
+    storeRecord(payload);
+    setStatus(`Period ${$("period").value} logged with ${state.count} tickets · Approx. AHT: ${payload.approxAhtSeconds===null ? "--:--" : formatDuration(payload.approxAhtSeconds)} · Daily total: ${totalToday()}.`);
+    render();updateGate()
+  };
+  setInterval(()=>{updateGate();renderAht()},1000)
+}
+init();
+</script>
+</body>
+</html>
