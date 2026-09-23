@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cory Team Ticket Counter</title>
+  <style>
+    :root{
+      --navy:#0f2d46;
+      --hero2:#17496e;
+      --page1:#fdeff8;
+      --page2:#f7f9fc;
+      --page3:#e9f4fb;
+      --counter-bg:#050505;
+      --plus:#d86acb;
+      --minus:#0f88a8;
+      --reset:#2c6b1f;
+      --text:#1f2937;
+      --white:#fff;
+      --border:#d8dee5;
+      --disabled:#a7b0bd;
+      --app-bg:rgba(255,255,255,.94);
+      --card-bg:#ffffff;
+      --soft-bg:#f8fafc;
+      --input-bg:#ffffff;
+      --surface-border:#e2e8f0;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Segoe UI",Arial,sans-serif; color:var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--page1) 78%, white 22%) 0 7%, transparent 22%),
+        radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--page3) 80%, white 20%) 0 8%, transparent 24%),
+        linear-gradient(135deg,var(--page1) 0%,var(--page2) 45%,var(--page3) 100%);
+      min-height:100vh; padding:24px;
+    }
+    .app{max-width:920px;margin:auto;background:var(--app-bg);border-radius:24px;
+      box-shadow:0 16px 40px rgba(15,45,70,.18);overflow:hidden}
+    .hero{background:linear-gradient(90deg,var(--navy),var(--hero2));color:#fff;padding:26px;text-align:center}
+    .hero h1{margin:0;font-size:42px}.hero p{margin:8px 0 0;opacity:.88;font-size:14px;text-transform:uppercase}
+    .content{padding:26px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr!important}}
+    .card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:18px;backdrop-filter:blur(8px)}
+    .card h2{margin:0 0 14px;color:var(--navy)}
+    .form-row{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin-bottom:10px}
+    label{font-weight:700;color:var(--navy);font-size:14px}
+    select,input,textarea{width:100%;border:1px solid var(--surface-border);border-radius:10px;padding:10px;font-size:15px;background:var(--input-bg);color:var(--text)}
+    input[readonly]{background:var(--soft-bg)} textarea{min-height:72px;resize:vertical}
+    .counter-box{background:var(--counter-bg);color:#fff;border-radius:16px;height:165px;display:flex;
+      align-items:center;justify-content:center;font-size:76px;font-weight:800;margin:10px 0 18px}
+    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    button{border:0;border-radius:14px;padding:16px;color:#fff;font-weight:800;cursor:pointer;font-size:15px}
+    button:disabled{background:var(--disabled)!important;color:#eef2f7!important;cursor:not-allowed;opacity:.72}
+    .btn-plus{background:var(--plus)}.btn-minus{background:var(--minus)}
+    .btn-reset{background:var(--reset);grid-column:1/-1}
+    .status,.lock-panel{margin-top:16px;padding:14px;border-radius:12px;background:#f4f6f8;text-align:center;font-size:14px}
+    .lock-panel.ready{background:#e9fbe8;color:#14532d}.lock-panel.locked{background:#fff2f8;color:#831843}
+    .lock-panel.waiting{background:#fff7ed;color:#7c2d12}
+    .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .pill{background:var(--soft-bg);border:1px solid var(--surface-border);border-radius:14px;padding:12px;text-align:center}
+    .pill b{display:block;color:var(--navy);font-size:19px}.pill span{font-size:12px;color:#64748b;text-transform:uppercase}
+    .history-wrap{margin-top:10px;border:1px solid var(--surface-border);border-radius:14px;overflow:auto;max-height:330px;background:var(--card-bg)}
+    .history-table{width:100%;border-collapse:collapse;font-size:13px}
+    .history-table th{background:var(--navy);color:#fff;text-align:left;padding:10px}
+    .history-table td{padding:10px;border-bottom:1px solid #e5e7eb}
+    .history-table tbody tr:last-child td{border-bottom:1px solid #e5e7eb}
+    .history-table tfoot td{background:var(--soft-bg);color:var(--navy);padding:11px}
+    .history-empty{margin-top:10px;padding:14px;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;text-align:center;font-size:13px}
+    .aht-panel{margin-top:20px;padding:16px;border:1px solid var(--surface-border);border-radius:16px;background:var(--soft-bg)}
+    .aht-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .aht-title h2{margin:0!important}
+    .aht-target{font-size:12px;color:#64748b;background:var(--card-bg);border:1px solid var(--surface-border);border-radius:999px;padding:6px 9px;white-space:nowrap}
+    .aht-main{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin-bottom:10px}
+    .aht-feature{border-radius:14px;padding:15px;background:var(--navy);color:#fff;text-align:center}
+    .aht-feature .value{display:block;font-size:34px;font-weight:800;letter-spacing:1px;line-height:1.1}
+    .aht-feature .label{display:block;font-size:11px;opacity:.82;text-transform:uppercase;letter-spacing:.45px;margin-top:5px}
+    .aht-feature.good{background:#276221}.aht-feature.high{background:#9f2f3d}.aht-feature.neutral{background:var(--navy)}
+    .aht-side{display:grid;gap:10px}
+    .aht-stat{background:var(--card-bg);border:1px solid var(--surface-border);border-radius:12px;padding:10px;text-align:center}
+    .aht-stat b{display:block;color:var(--navy);font-size:18px}.aht-stat span{display:block;color:#64748b;font-size:10px;text-transform:uppercase;margin-top:3px}
+    .aht-message{font-size:13px;line-height:1.45;text-align:center;padding:10px;border-radius:11px;background:var(--card-bg);color:#475569;border:1px solid var(--surface-border)}
+    .aht-message.good{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.aht-message.high{background:#fff1f2;color:#9f1239;border-color:#fecdd3}
+    .aht-note{margin-top:9px;color:#64748b;font-size:11px;line-height:1.4;text-align:center}
+    @media(max-width:520px){.aht-main{grid-template-columns:1fr}.mini{grid-template-columns:1fr 1fr}.mini .pill:last-child{grid-column:1/-1}}
+    .theme-row{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin-bottom:10px}
+    .theme-preview{display:flex;gap:7px;align-items:center;margin-top:7px}
+    .theme-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px #cbd5e1}
+    .auto-save-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--navy);
+      background:var(--card-bg);border:1px solid var(--surface-border);border-radius:999px;padding:6px 10px;margin-top:8px}
+    .auto-save-badge::before{content:"";width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px #dcfce7}
+    .live-clock{
+      margin:12px 0 16px;
+      padding:14px 16px;
+      border:1px solid var(--surface-border);
+      border-radius:16px;
+      background:var(--soft-bg);
+      text-align:center;
+    }
+    .clock-time{
+      font-size:30px;
+      line-height:1;
+      font-weight:800;
+      color:var(--navy);
+      letter-spacing:.8px;
+    }
+    .clock-period{
+      margin-top:7px;
+      font-size:13px;
+      font-weight:700;
+      color:#475569;
+    }
+    .clock-save{
+      margin-top:4px;
+      font-size:12px;
+      color:#64748b;
+    }
+    .footer{text-align:center;color:#64748b;font-size:12px;margin-top:18px}
+  </style>
+</head>
+<body>
+<main class="app">
+  <section class="hero"><h1>Ticket Counter</h1><p>Cory Team · Hourly Ticket Counter</p></section>
+  <section class="content">
+    <div class="grid">
+      <div class="card">
+        <h2>Counter</h2>
+        <div class="form-row"><label for="helper">Helper</label><select id="helper"></select></div>
+        <div class="theme-row">
+          <label for="theme">Counter theme</label>
+          <div>
+            <select id="theme">
+              <optgroup label="Pastel favorites">
+                <option value="pinkblush">Pink Blush</option>
+                <option value="strawberry">Strawberry Milk</option>
+                <option value="cottoncandy">Cotton Candy</option>
+                <option value="rosequartz">Rose Quartz</option>
+                <option value="peach">Peach Cream</option>
+                <option value="buttercream">Buttercream</option>
+                <option value="mint">Mint Cream</option>
+                <option value="sage">Sage Garden</option>
+                <option value="babyblue">Baby Blue</option>
+                <option value="lilacdream">Lilac Dream</option>
+                <option value="periwinkle">Periwinkle</option>
+                <option value="pastelrainbow">Pastel Rainbow</option>
+              </optgroup>
+              <optgroup label="Original themes">
+                <option value="coral">Coral Pop</option>
+                <option value="ocean">Ocean</option>
+                <option value="lavender">Lavender</option>
+                <option value="emerald">Emerald</option>
+                <option value="sunset">Sunset</option>
+                <option value="minecraft">Minecraft</option>
+              </optgroup>
+            </select>
+            <div class="theme-preview" aria-hidden="true">
+              <span class="theme-dot" id="themeDot1"></span>
+              <span class="theme-dot" id="themeDot2"></span>
+              <span class="theme-dot" id="themeDot3"></span>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-top:6px;">
+              Changes the page background, panels, counter and buttons.
+            </div>
+          </div>
+        </div>
+        <div class="form-row"><label for="alias">Alias</label><input id="alias" readonly /></div>
+        <div class="form-row"><label for="lead">Lead</label><input id="lead" readonly /></div>
+        <div class="form-row"><label for="date">Date</label><input id="date" type="date" /></div>
+        <select id="period" hidden aria-hidden="true"></select>
+        <div class="form-row"><label for="notes">Notes</label><textarea id="notes" placeholder="Optional notes"></textarea></div>
+        <div class="live-clock">
+          <div class="clock-time" id="liveClock">--:--:--</div>
+          <div class="clock-period" id="currentPeriodLabel">Current period: --:-- - --:--</div>
+          <div class="clock-save" id="nextAutoSave">Auto Save at --:--</div>
+        </div>
+        <div id="lockPanel" class="lock-panel waiting">Checking selected period...</div>
+        <div class="counter-box" id="counter">0</div>
+        <div class="buttons">
+          <button class="btn-plus" id="plus">Run +1</button>
+          <button class="btn-minus" id="minus">Run -1</button>
+          <button class="btn-reset" id="reset">Run Restart Counting</button>
+        </div>
+        <div class="status" id="status">Ready. Select your name and start counting.</div>
+      </div>
+
+      <div class="card">
+        <h2>Today Summary</h2>
+        <div class="mini">
+          <div class="pill"><b id="todayTotal">0</b><span>Daily total</span></div>
+          <div class="pill"><b id="periodTotal">0</b><span>Current period</span></div>
+          <div class="pill"><b id="logStatus">Open</b><span>Log status</span></div>
+        </div>
+
+        <div class="lock-panel waiting">
+          Count tickets during the current hour. The counter is <b>saved automatically</b> when the next hour begins,
+          then it moves to the new period and starts again at 0.
+          <div class="auto-save-badge">Auto Save enabled</div>
+        </div>
+
+        <div class="aht-panel">
+          <div class="aht-title">
+            <h2>Approx. AHT Pace</h2>
+            <span class="aht-target">Goal: 5.40 min (05:24)</span>
+          </div>
+          <div class="aht-main">
+            <div class="aht-feature neutral" id="ahtFeature">
+              <span class="value" id="currentAht">--:--</span>
+              <span class="label">Current period approx. AHT</span>
+            </div>
+            <div class="aht-side">
+              <div class="aht-stat"><b id="dailyAht">--:--</b><span>Daily avg. approx. AHT</span></div>
+              <div class="aht-stat"><b id="activeTime">00:00:00</b><span>Approx. active time</span></div>
+            </div>
+          </div>
+          <div class="aht-message" id="ahtMessage">Add your first interaction to start the AHT pace estimate.</div>
+          <div class="aht-note">This is a pacing estimate based on elapsed time and completed interactions. Official AHT is calculated in Zendesk and may differ.</div>
+        </div>
+
+        <h2 style="margin-top:22px;">Hourly History</h2>
+        <div id="emptyHistory" class="history-empty">No completed periods logged for this date yet.</div>
+        <div class="history-wrap" id="historyWrap" style="display:none;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Tickets</th>
+                <th>Approx. AHT</th>
+                <th>Logged at</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+            <tfoot>
+              <tr>
+                <td><strong>Daily Total</strong></td>
+                <td id="historyDailyTotal"><strong>0</strong></td>
+                <td id="historyDailyAht"><strong>--:--</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="footer">Helper view · Hourly ticket counter</div>
+  </section>
+</main>
+
+<script>
+const ROSTER = [
+  {name:"Benji Baez", alias:"v-bbaezjones", lead:"Cory"},
+  {name:"Daniel Restrepo", alias:"v-drestrepo", lead:"Cory"},
+  {name:"Giovanni Arteaga", alias:"v-giovanniar", lead:"Cory"},
+  {name:"Hector Cisneros", alias:"", lead:"Cory"},
+  {name:"Judith Cristina Casillas San Juan", alias:"v-judithc", lead:"Cory"},
+  {name:"Mariana Moreno", alias:"", lead:"Cory"},
+  {name:"Pablo Javier Zuñiga Quiñones", alias:"v-pablozu", lead:"Cory"},
+  {name:"Rafael Lizarraga Arias", alias:"v-rafaelli", lead:"Cory"},
+  {name:"Ricardo Rivera del Río", alias:"v-ricardor", lead:"Cory"},
+  {name:"Rodrigo Bravo Morales", alias:"v-rodrigobr", lead:"Cory"},
+  {name:"Sergio Tiznado Santo", alias:"", lead:"Cory"},
+  {name:"Tony Gutay", alias:"v-tonygutay", lead:"Cory"}
+];
+
+const $ = id => document.getElementById(id);
+const state = {
+  count:0,
+  records:JSON.parse(localStorage.getItem("ticketCounter.records") || "[]"),
+  isLocked:false,
+  autoSaving:false
+};
+
+const AHT_GOAL_SECONDS = 5 * 60 + 24; // 5.40 minutes = 05:24
+
+const THEMES = {
+  pinkblush:{
+    navy:"#7c3f67", hero2:"#b85c8e",
+    page1:"#fde7f2", page2:"#fff6fa", page3:"#f8d9e9",
+    counter:"#5d304f", plus:"#e98bb9", minus:"#c994c7", reset:"#b66d91",
+    app:"#fff9fcf2", card:"#fffafd", soft:"#fceef5", input:"#fffafd", border:"#edcfdf"
+  },
+  strawberry:{
+    navy:"#8a3f54", hero2:"#c95b75",
+    page1:"#ffe8ee", page2:"#fff8fa", page3:"#ffd7e1",
+    counter:"#6f2f43", plus:"#f08098", minus:"#d98aa2", reset:"#bf6079",
+    app:"#fffafbf2", card:"#fffafb", soft:"#fff0f4", input:"#fffafb", border:"#f1ced8"
+  },
+  cottoncandy:{
+    navy:"#5d5b9c", hero2:"#a76aa7",
+    page1:"#ffdff1", page2:"#f8f1ff", page3:"#dfeaff",
+    counter:"#48457f", plus:"#f09ac3", minus:"#8ebbe8", reset:"#ad88cf",
+    app:"#fffafff2", card:"#fffaff", soft:"#f7effc", input:"#fffaff", border:"#dfd4ed"
+  },
+  rosequartz:{
+    navy:"#76505d", hero2:"#a97382",
+    page1:"#f5e1e7", page2:"#fff8fa", page3:"#ead5dd",
+    counter:"#57404a", plus:"#d89aaa", minus:"#be9faf", reset:"#ad7f8d",
+    app:"#fffafbf2", card:"#fffafb", soft:"#f6ecef", input:"#fffafb", border:"#dfcdd3"
+  },
+  peach:{
+    navy:"#8a503e", hero2:"#c97858",
+    page1:"#ffe7d8", page2:"#fff8f2", page3:"#ffd9ca",
+    counter:"#674032", plus:"#f4a27f", minus:"#e7a885", reset:"#c77d5e",
+    app:"#fffaf7f2", card:"#fffaf7", soft:"#fff0e7", input:"#fffaf7", border:"#efd4c5"
+  },
+  buttercream:{
+    navy:"#75602d", hero2:"#aa8b43",
+    page1:"#fff3c9", page2:"#fffaf0", page3:"#fbe7a5",
+    counter:"#58481f", plus:"#e7bd63", minus:"#d7ae72", reset:"#ad9147",
+    app:"#fffdf8f2", card:"#fffdf8", soft:"#fff6d9", input:"#fffdf8", border:"#eadcb4"
+  },
+  mint:{
+    navy:"#356858", hero2:"#5f9f88",
+    page1:"#dcf6ea", page2:"#f5fff9", page3:"#caeddc",
+    counter:"#294e43", plus:"#7fcbb0", minus:"#76bdb5", reset:"#58977f",
+    app:"#fafffcf2", card:"#fafffc", soft:"#eaf8f1", input:"#fafffc", border:"#cde6da"
+  },
+  sage:{
+    navy:"#52634b", hero2:"#748b68",
+    page1:"#e7efdf", page2:"#f9fbf5", page3:"#d9e6d0",
+    counter:"#3e4c39", plus:"#9fba8c", minus:"#8ca99a", reset:"#708864",
+    app:"#fbfdf9f2", card:"#fbfdf9", soft:"#edf3e8", input:"#fbfdf9", border:"#d6e0cf"
+  },
+  babyblue:{
+    navy:"#426b8b", hero2:"#6d9ec1",
+    page1:"#dfefff", page2:"#f6fbff", page3:"#cfe6fb",
+    counter:"#31516b", plus:"#8ec5ec", minus:"#7faed8", reset:"#668fae",
+    app:"#fafdfff2", card:"#fafdff", soft:"#eaf5fd", input:"#fafdff", border:"#d0e4f3"
+  },
+  lilacdream:{
+    navy:"#65528b", hero2:"#9278bb",
+    page1:"#eee5ff", page2:"#fbf8ff", page3:"#dfd2f7",
+    counter:"#4d3f6d", plus:"#b69adf", minus:"#9ca3db", reset:"#846ca7",
+    app:"#fcfafff2", card:"#fcfaff", soft:"#f1ebfa", input:"#fcfaff", border:"#ded2ec"
+  },
+  periwinkle:{
+    navy:"#505d95", hero2:"#7885c4",
+    page1:"#e5e8ff", page2:"#f8f9ff", page3:"#d4daf8",
+    counter:"#3e4775", plus:"#9aa7e8", minus:"#83a9db", reset:"#6d78ad",
+    app:"#fbfbfff2", card:"#fbfbff", soft:"#edf0fc", input:"#fbfbff", border:"#d6daf0"
+  },
+  pastelrainbow:{
+    navy:"#675a84", hero2:"#9975a4",
+    page1:"#ffdfe9", page2:"#fff7dc", page3:"#dff3ff",
+    counter:"#514866", plus:"#efa0bd", minus:"#82bfdd", reset:"#8fbf9a",
+    app:"#fffdfbf2", card:"#fffdfb", soft:"#f7f2f8", input:"#fffdfb", border:"#e3d9e5"
+  },
+  coral:{
+    navy:"#0f2d46", hero2:"#17496e",
+    page1:"#fdeff8", page2:"#f7f9fc", page3:"#e9f4fb",
+    counter:"#050505", plus:"#d86acb", minus:"#0f88a8", reset:"#2c6b1f",
+    app:"#fffffff2", card:"#ffffff", soft:"#f8fafc", input:"#ffffff", border:"#e2e8f0"
+  },
+  ocean:{
+    navy:"#0b3a53", hero2:"#0e7490",
+    page1:"#e6f7fb", page2:"#f5fbfd", page3:"#e0f2fe",
+    counter:"#082f49", plus:"#0891b2", minus:"#2563eb", reset:"#0f766e",
+    app:"#fbfefff2", card:"#fbfeff", soft:"#edf8fb", input:"#fbfeff", border:"#cee5ec"
+  },
+  lavender:{
+    navy:"#4c1d95", hero2:"#6d28d9",
+    page1:"#f5f3ff", page2:"#faf7ff", page3:"#ede9fe",
+    counter:"#2e1065", plus:"#a855f7", minus:"#6366f1", reset:"#7c3aed",
+    app:"#fdfbfff2", card:"#fdfbff", soft:"#f4effd", input:"#fdfbff", border:"#dfd4f0"
+  },
+  emerald:{
+    navy:"#064e3b", hero2:"#047857",
+    page1:"#ecfdf5", page2:"#f7fdf9", page3:"#d1fae5",
+    counter:"#022c22", plus:"#10b981", minus:"#0f766e", reset:"#15803d",
+    app:"#fbfffdf2", card:"#fbfffd", soft:"#ecf8f1", input:"#fbfffd", border:"#cce6d8"
+  },
+  sunset:{
+    navy:"#7c2d12", hero2:"#c2410c",
+    page1:"#fff7ed", page2:"#fffaf7", page3:"#ffe4e6",
+    counter:"#431407", plus:"#f97316", minus:"#e11d48", reset:"#b45309",
+    app:"#fffdfbf2", card:"#fffdfb", soft:"#fff2eb", input:"#fffdfb", border:"#efd8cc"
+  },
+  minecraft:{
+    navy:"#1f4d2e", hero2:"#3b7d44",
+    page1:"#eef7ea", page2:"#f7fbf5", page3:"#e3f0dc",
+    counter:"#1b1b1b", plus:"#62a744", minus:"#3b82a0", reset:"#456f2f",
+    app:"#fbfdfaf2", card:"#fbfdfa", soft:"#edf4e9", input:"#fbfdfa", border:"#d2dfcc"
+  }
+};
+
+function themeKey(){
+  return `ticketCounter.theme.${keyIdentity()}`;
+}
+function applyTheme(name){
+  const chosen=THEMES[name] || THEMES.coral;
+  const root=document.documentElement;
+  root.style.setProperty("--navy",chosen.navy);
+  root.style.setProperty("--hero2",chosen.hero2);
+  root.style.setProperty("--page1",chosen.page1);
+  root.style.setProperty("--page2",chosen.page2);
+  root.style.setProperty("--page3",chosen.page3);
+  root.style.setProperty("--counter-bg",chosen.counter);
+  root.style.setProperty("--plus",chosen.plus);
+  root.style.setProperty("--minus",chosen.minus);
+  root.style.setProperty("--reset",chosen.reset);
+  root.style.setProperty("--app-bg",chosen.app || "rgba(255,255,255,.94)");
+  root.style.setProperty("--card-bg",chosen.card || "#ffffff");
+  root.style.setProperty("--soft-bg",chosen.soft || "#f8fafc");
+  root.style.setProperty("--input-bg",chosen.input || "#ffffff");
+  root.style.setProperty("--surface-border",chosen.border || "#e2e8f0");
+  root.style.setProperty("--border",chosen.border || "#d8dee5");
+  $("theme").value=name in THEMES ? name : "coral";
+  $("themeDot1").style.background=chosen.plus;
+  $("themeDot2").style.background=chosen.minus;
+  $("themeDot3").style.background=chosen.reset;
+}
+function loadHelperTheme(){
+  const saved=localStorage.getItem(themeKey()) || "coral";
+  applyTheme(saved);
+}
+function saveHelperTheme(){
+  const name=$("theme").value;
+  localStorage.setItem(themeKey(),name);
+  applyTheme(name);
+}
+
+
+function formatDuration(totalSeconds, includeHours=false){
+  const safe=Math.max(0,Math.round(Number(totalSeconds)||0));
+  const h=Math.floor(safe/3600), m=Math.floor((safe%3600)/60), s=safe%60;
+  if(includeHours || h>0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+function selectedPeriodBounds(){
+  const dv=$("date").value, p=$("period").value;
+  if(!dv||!p) return null;
+  const h=Number(p.split(":")[0]), [y,m,d]=dv.split("-").map(Number);
+  const start=new Date(y,m-1,d,h,0,0,0);
+  const end=new Date(y,m-1,d,h+1,0,0,0);
+  return {start,end};
+}
+function selectedPeriodElapsedSeconds(){
+  const bounds=selectedPeriodBounds();
+  if(!bounds) return 0;
+  const now=new Date();
+  if(now<=bounds.start) return 0;
+  if(now>=bounds.end) return 3600;
+  return Math.max(0,Math.min(3600,Math.floor((now-bounds.start)/1000)));
+}
+function recordElapsedSeconds(record){
+  const count=Number(record.count||0);
+  if(count<=0) return 0;
+  const saved=Number(record.elapsedSeconds);
+  return Number.isFinite(saved) && saved>0 ? Math.min(3600,saved) : 3600;
+}
+function recordApproxAhtSeconds(record){
+  const count=Number(record.count||0);
+  if(count<=0) return null;
+  const stored=Number(record.approxAhtSeconds);
+  if(Number.isFinite(stored) && stored>=0) return stored;
+  return recordElapsedSeconds(record)/count;
+}
+
+function pad(n){return String(n).padStart(2,"0")}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function nowIsoLocal(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
+function periods(){return Array.from({length:24},(_,h)=>`${pad(h)}:00 - ${pad(h)}:59`)}
+function currentPeriodLabel(){const h=new Date().getHours();return `${pad(h)}:00 - ${pad(h)}:59`}
+function formatClockTime(d){
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+function updateLiveClock(){
+  const now=new Date();
+  const period=currentPeriodLabel();
+  const next=new Date(now.getFullYear(),now.getMonth(),now.getDate(),now.getHours()+1,0,0,0);
+  $("liveClock").textContent=formatClockTime(now);
+  $("currentPeriodLabel").textContent=`Current period: ${period}`;
+  $("nextAutoSave").textContent=`Auto Save at ${pad(next.getHours())}:00`;
+}
+function selectedRoster(){return ROSTER.find(r=>r.name===$("helper").value) || ROSTER[0]}
+function keyIdentity(){const r=selectedRoster();return r.alias || r.name.replace(/\s+/g,"_")}
+function countKey(){return `ticketCounter.count.${keyIdentity()}.${$("date").value}.${$("period").value}`}
+function logKey(){return `${keyIdentity()}|${$("date").value}|${$("period").value.split(" - ")[0]}`}
+function lockKey(){return `ticketCounter.logged.${logKey()}`}
+function loggedRecord(){const x=localStorage.getItem(lockKey());try{return x?JSON.parse(x):null}catch{return null}}
+function saveCount(){localStorage.setItem(countKey(),String(state.count))}
+function loadCount(){state.count=Number(localStorage.getItem(countKey())||"0");render();updateGate()}
+function setStatus(msg){$("status").textContent=msg}
+function recordsForSelectedDay(){
+  const helper=$("helper").value, d=$("date").value;
+  return state.records
+    .filter(r=>r.helper===helper && r.date===d && r.action==="Save")
+    .sort((a,b)=>String(a.period||"").localeCompare(String(b.period||"")));
+}
+function totalToday(){
+  return recordsForSelectedDay().reduce((s,r)=>s+Number(r.count||0),0)
+}
+function liveDailyTickets(){
+  return totalToday() + (loggedRecord() ? 0 : Number(state.count||0));
+}
+function dailyAhtStats(){
+  const records=recordsForSelectedDay();
+  let tickets=0, seconds=0;
+  records.forEach(r=>{
+    const c=Number(r.count||0);
+    if(c>0){ tickets+=c; seconds+=recordElapsedSeconds(r); }
+  });
+  if(!loggedRecord() && state.count>0){
+    tickets+=Number(state.count);
+    seconds+=selectedPeriodElapsedSeconds();
+  }
+  return {tickets, seconds, aht:tickets>0 ? seconds/tickets : null};
+}
+function displayLoggedAt(timestamp){
+  if(!timestamp) return "";
+  const time = String(timestamp).split(" ")[1] || "";
+  return time ? time.slice(0,5) : timestamp;
+}
+function renderHistory(){
+  const records = recordsForSelectedDay();
+  const body = $("historyBody");
+  const wrap = $("historyWrap");
+  const empty = $("emptyHistory");
+  if(!body || !wrap || !empty) return;
+
+  if(records.length===0){
+    body.innerHTML="";
+    wrap.style.display="none";
+    empty.style.display="block";
+    $("historyDailyTotal").innerHTML="<strong>0</strong>";
+    $("historyDailyAht").innerHTML="<strong>--:--</strong>";
+    return;
+  }
+
+  body.innerHTML = records.map(r=>{
+    const aht=recordApproxAhtSeconds(r);
+    return `
+    <tr>
+      <td>${r.period}</td>
+      <td><strong>${Number(r.count||0)}</strong></td>
+      <td><strong>${aht===null ? "--:--" : formatDuration(aht)}</strong></td>
+      <td>${displayLoggedAt(r.timestamp)}${r.saveMode==="Auto" ? " · Auto" : ""}</td>
+    </tr>`;
+  }).join("");
+
+  const loggedTickets=records.reduce((s,r)=>s+Number(r.count||0),0);
+  const loggedSeconds=records.reduce((s,r)=>s+recordElapsedSeconds(r),0);
+  const loggedAht=loggedTickets>0 ? loggedSeconds/loggedTickets : null;
+  $("historyDailyTotal").innerHTML=`<strong>${loggedTickets}</strong>`;
+  $("historyDailyAht").innerHTML=`<strong>${loggedAht===null ? "--:--" : formatDuration(loggedAht)}</strong>`;
+  empty.style.display="none";
+  wrap.style.display="block";
+}
+function renderAht(){
+  const elapsed=selectedPeriodElapsedSeconds();
+  const current=state.count>0 ? elapsed/state.count : null;
+  const daily=dailyAhtStats();
+  const feature=$("ahtFeature"), message=$("ahtMessage");
+  $("currentAht").textContent=current===null ? "--:--" : formatDuration(current);
+  $("dailyAht").textContent=daily.aht===null ? "--:--" : formatDuration(daily.aht);
+  $("activeTime").textContent=formatDuration(daily.seconds,true);
+
+  feature.className="aht-feature neutral";
+  message.className="aht-message";
+  if(current===null){
+    message.textContent="Add your first interaction to start the AHT pace estimate.";
+  } else if(current<=AHT_GOAL_SECONDS){
+    feature.className="aht-feature good";
+    message.className="aht-message good";
+    message.textContent=`Current pace is within the 5.40 min (05:24) AHT goal (${formatDuration(current)} approx.).`;
+  } else {
+    feature.className="aht-feature high";
+    message.className="aht-message high";
+    message.textContent=`Current pace is above the 5.40 min (05:24) AHT goal (${formatDuration(current)} approx.). Keep the next interactions focused and efficient.`;
+  }
+}
+function periodUnlockDate(){
+  const bounds=selectedPeriodBounds();
+  return bounds ? bounds.end : null
+}
+function formatTime(d){return `${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function render(){
+  $("counter").textContent=state.count;
+  $("periodTotal").textContent=state.count;
+  $("todayTotal").textContent=liveDailyTickets();
+  renderHistory();
+  renderAht()
+}
+function updateGate(){
+  const logged=loggedRecord();
+  const bounds=selectedPeriodBounds();
+  const now=new Date();
+
+  state.isLocked=!!logged;
+
+  if(logged){
+    ["plus","minus","reset"].forEach(id=>$(id).disabled=true);
+    $("logStatus").textContent="Saved";
+    $("lockPanel").className="lock-panel locked";
+    $("lockPanel").innerHTML=`This period is already saved. Saved count: <b>${logged.count}</b>. Moving to the current hour...`;
+    return;
+  }
+
+  const isToday=$("date").value===todayStr();
+  const isCurrent=$("period").value===currentPeriodLabel();
+
+  if(!isToday || !isCurrent){
+    ["plus","minus","reset"].forEach(id=>$(id).disabled=true);
+    $("logStatus").textContent="Review";
+    $("lockPanel").className="lock-panel waiting";
+    $("lockPanel").textContent="Counter controls are available only for today's active period.";
+    return;
+  }
+
+  ["plus","minus","reset"].forEach(id=>$(id).disabled=false);
+  $("logStatus").textContent="Auto";
+  $("lockPanel").className="lock-panel ready";
+  $("lockPanel").innerHTML=`<b>Auto Save enabled.</b> Keep counting interactions during the current hour.`;
+}
+function refreshHelper(){
+  const r=selectedRoster();
+  $("alias").value=r.alias || "Pending";
+  $("lead").value=r.lead;
+  localStorage.setItem("ticketCounter.lastHelper",r.name);
+  loadHelperTheme();
+  $("date").value=todayStr();
+  $("period").value=currentPeriodLabel();
+  loadCount()
+}
+function storeRecord(payload){
+  state.records.push(payload);
+  localStorage.setItem("ticketCounter.records",JSON.stringify(state.records));
+  localStorage.setItem(lockKey(),JSON.stringify(payload))
+}
+
+function buildAutoSavePayload(){
+  const r=selectedRoster();
+  const elapsed=selectedPeriodElapsedSeconds();
+  return {
+    logKey:logKey(),
+    timestamp:nowIsoLocal(),
+    helper:r.name,
+    alias:r.alias||"",
+    lead:r.lead,
+    date:$("date").value,
+    period:$("period").value,
+    count:state.count,
+    elapsedSeconds:elapsed,
+    approxAhtSeconds:state.count>0 ? elapsed/state.count : null,
+    action:"Save",
+    saveMode:"Auto",
+    notes:$("notes").value||""
+  };
+}
+
+function advanceToCurrentPeriod(){
+  if($("date").value !== todayStr()) return false;
+  const current=currentPeriodLabel();
+  $("period").value=current;
+  $("notes").value="";
+  loadCount();
+  setStatus(`New active period: ${current}. Auto Save is enabled.`);
+  return true;
+}
+
+function autoSaveIfNeeded(){
+  if(state.autoSaving) return;
+  if($("date").value !== todayStr()) return;
+
+  const bounds=selectedPeriodBounds();
+  if(!bounds) return;
+
+  const now=new Date();
+  const current=currentPeriodLabel();
+
+  if($("period").value === current) return;
+  if(now < bounds.end) return;
+
+  const existing=loggedRecord();
+  if(existing){
+    advanceToCurrentPeriod();
+    return;
+  }
+
+  state.autoSaving=true;
+  const payload=buildAutoSavePayload();
+  const savedPeriod=payload.period;
+  const savedCount=payload.count;
+  const savedAht=payload.approxAhtSeconds;
+
+  storeRecord(payload);
+  render();
+
+  advanceToCurrentPeriod();
+
+  setStatus(`Auto Saved ${savedPeriod}: ${savedCount} tickets · Approx. AHT: ${savedAht===null ? "--:--" : formatDuration(savedAht)} · Daily total: ${totalToday()}.`);
+  state.autoSaving=false;
+}
+
+function init(){
+  ROSTER.forEach(r=>{const o=document.createElement("option");o.value=r.name;o.textContent=r.name;$("helper").appendChild(o)});
+  periods().forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;$("period").appendChild(o)});
+  $("date").value=todayStr();$("period").value=currentPeriodLabel();
+  const last=localStorage.getItem("ticketCounter.lastHelper");if(last&&ROSTER.some(r=>r.name===last))$("helper").value=last;
+  refreshHelper();
+  loadHelperTheme();
+  autoSaveIfNeeded();
+  updateGate();
+  updateLiveClock();
+
+  $("helper").addEventListener("change",refreshHelper);
+  $("theme").addEventListener("change",saveHelperTheme);
+  $("date").addEventListener("change",()=>{
+    if($("date").value===todayStr()) $("period").value=currentPeriodLabel();
+    loadCount();
+  });
+  $("plus").onclick=()=>{if(state.isLocked)return;state.count++;saveCount();render()};
+  $("minus").onclick=()=>{if(state.isLocked)return;state.count=Math.max(0,state.count-1);saveCount();render()};
+  $("reset").onclick=()=>{if(state.isLocked)return;if(confirm("Restart this period count to 0?")){state.count=0;saveCount();render()}};
+
+  setInterval(()=>{
+    autoSaveIfNeeded();
+    updateGate();
+    renderAht();
+    updateLiveClock();
+  },1000)
+}
+init();
+</script>
+</body>
+</html>
